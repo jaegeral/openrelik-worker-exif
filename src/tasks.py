@@ -29,13 +29,14 @@ TASK_METADATA = {
     # Configuration that will be rendered as a web for in the UI, and any data entered
     # by the user will be available to the task function when executing (task_config).
     "task_config": [
-        # { # Example: You could add an option to output in JSON format
-        #     "name": "json_output",
-        #     "label": "Output in JSON format",
-        #     "description": "If checked, ExifTool will output metadata in JSON format.",
-        #     "type": "checkbox",
-        #     "required": False,
-        # },
+        {
+            "name": "json_output",
+            "label": "Output in JSON format",
+            "description": "If checked, ExifTool will output metadata in JSON format. Output files will have a .json extension and 'application/json' MIME type.",
+            "type": "checkbox",
+            "required": False,
+            "default_value": False,
+        },
     ],
 }
 
@@ -61,19 +62,32 @@ def command(
     Returns:
         Base64-encoded dictionary containing task results.
     """
+    task_config = task_config or {}
     input_files = get_input_files(pipe_result, input_files or [])
     output_files = []
+
+    # Determine if JSON output is requested
+    json_output_enabled = task_config.get("json_output", False)
+
     base_command = ["exiftool"]
+    if json_output_enabled:
+        base_command.append("-json")
+
     base_command_string = " ".join(base_command)
 
     for input_file in input_files:
+        output_file_extension = ".json" if json_output_enabled else ".txt"
+        output_file_data_type = (
+            "application/json" if json_output_enabled else "text/plain"
+        )
+
         output_file = create_output_file(
             output_path,
             display_name=input_file.get("display_name"),
-            extension=".txt",  # ExifTool output is typically text
-            data_type="text/plain",
+            extension=output_file_extension,
+            data_type=output_file_data_type,
         )
-        # Command to run: exiftool <input_file_path>
+        # Command to run: exiftool [-json] <input_file_path>
         # The output will be redirected to output_file.path
         current_command = base_command + [input_file.get("path")]
 

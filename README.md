@@ -3,6 +3,16 @@
 The OpenRelik Exif Worker is a Celery-based task processor designed to extract EXIF (Exchangeable Image File Format) metadata from image files. It utilizes the powerful `exiftool` command-line utility to read and parse metadata, making it available for further processing within the OpenRelik ecosystem.
 
 ## Deploy
+
+## Configuration
+
+The worker offers task-specific configurations that can be set through the OpenRelik UI when dispatching a task.
+
+*   **Output in JSON format**:
+    *   **UI Label**: `Output in JSON format`
+    *   **Description**: If checked, ExifTool will output metadata in JSON format. Output files will have a `.json` extension and an `application/json` MIME type. Otherwise, the output will be plain text (`.txt` extension, `text/plain` MIME type).
+    *   **Default**: Unchecked (plain text output).
+
 Add the below configuration to the OpenRelik docker-compose.yml file.
 
 ```
