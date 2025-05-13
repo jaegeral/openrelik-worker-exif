@@ -1,23 +1,23 @@
 ## NOTE: Bootstrap the new worker with `bash bootstrap.sh`!
 
-# Openrelik worker TEMPLATEWORKERNAME
+# Openrelik worker exif
 ## Description
-Enter a good description of your worker here.
+The OpenRelik Exif Worker is a Celery-based task processor designed to extract EXIF (Exchangeable Image File Format) metadata from image files. It utilizes the powerful `exiftool` command-line utility to read and parse metadata, making it available for further processing within the OpenRelik ecosystem.
 
 ## Deploy
 Add the below configuration to the OpenRelik docker-compose.yml file.
 
 ```
-openrelik-worker-TEMPLATEWORKERNAME:
-    container_name: openrelik-worker-TEMPLATEWORKERNAME
-    image: ghcr.io/openrelik/openrelik-worker-TEMPLATEWORKERNAME:latest
+openrelik-worker-exif:
+    container_name: openrelik-worker-exif
+    image: ghcr.io/openrelik/openrelik-worker-exif:latest
     restart: always
     environment:
       - REDIS_URL=redis://openrelik-redis:6379
       - OPENRELIK_PYDEBUG=0
     volumes:
       - ./data:/usr/share/openrelik/data
-    command: "celery --app=src.app worker --task-events --concurrency=4 --loglevel=INFO -Q openrelik-worker-TEMPLATEWORKERNAME"
+    command: "celery --app=src.app worker --task-events --concurrency=4 --loglevel=INFO -Q openrelik-worker-exif"
     # ports:
       # - 5678:5678 # For debugging purposes.
 ```

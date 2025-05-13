@@ -20,22 +20,22 @@ from openrelik_worker_common.task_utils import create_task_result, get_input_fil
 from .app import celery
 
 # Task name used to register and route the task to the correct queue.
-TASK_NAME = "openrelik-worker-TEMPLATEWORKERNAME.tasks.your_task_name"
+TASK_NAME = "openrelik-worker-exif.tasks.extract_exif"
 
 # Task metadata for registration in the core system.
 TASK_METADATA = {
-    "display_name": "openrelik-worker-TEMPLATEWORKERNAME",
-    "description": "TEMPLATEDESC",
+    "display_name": "ExifTool Extractor",
+    "description": "Extracts EXIF metadata from files using ExifTool.",
     # Configuration that will be rendered as a web for in the UI, and any data entered
     # by the user will be available to the task function when executing (task_config).
     "task_config": [
-        {
-            "name": "<REPLACE_WITH_NAME>",
-            "label": "<REPLACE_WITH_LABEL>",
-            "description": "<REPLACE_WITH_DESCRIPTION>",
-            "type": "<REPLACE_WITH_TYPE>",  # Types supported: text, textarea, checkbox
-            "required": False,
-        },
+        # { # Example: You could add an option to output in JSON format
+        #     "name": "json_output",
+        #     "label": "Output in JSON format",
+        #     "description": "If checked, ExifTool will output metadata in JSON format.",
+        #     "type": "checkbox",
+        #     "required": False,
+        # },
     ],
 }
 
@@ -49,7 +49,7 @@ def command(
     workflow_id: str = None,
     task_config: dict = None,
 ) -> str:
-    """Run <REPLACE_WITH_COMMAND> on input files.
+    """Run exiftool on input files to extract metadata.
 
     Args:
         pipe_result: Base64-encoded result from the previous Celery task, if any.
@@ -63,26 +63,38 @@ def command(
     """
     input_files = get_input_files(pipe_result, input_files or [])
     output_files = []
-    base_command = ["<REPLACE_WITH_COMMAND>"]
+    base_command = ["exiftool"]
     base_command_string = " ".join(base_command)
 
     for input_file in input_files:
         output_file = create_output_file(
             output_path,
             display_name=input_file.get("display_name"),
-            extension="<REPLACE_WITH_FILE_EXTENSION>",
-            data_type="<[OPTIONAL]_REPLACE_WITH_DATA_TYPE>",
+            extension=".txt",  # ExifTool output is typically text
+            data_type="text/plain",
         )
-        command = base_command + [input_file.get("path")]
+        # Command to run: exiftool <input_file_path>
+        # The output will be redirected to output_file.path
+        current_command = base_command + [input_file.get("path")]
 
         # Run the command
         with open(output_file.path, "w") as fh:
-            subprocess.Popen(command, stdout=fh)
+            process = subprocess.Popen(
+                current_command, stdout=fh, stderr=subprocess.PIPE
+            )
+            _, stderr = process.communicate()
+            if process.returncode != 0:
+                error_message = (
+                    f"ExifTool failed for {input_file.get('path')}: {stderr.decode()}"
+                )
+                raise RuntimeError(error_message)
 
         output_files.append(output_file.to_dict())
 
     if not output_files:
-        raise RuntimeError("<REPLACE_WITH_ERROR_STRING>")
+        raise RuntimeError(
+            "No input files were processed or ExifTool produced no output."
+        )
 
     return create_task_result(
         output_files=output_files,
